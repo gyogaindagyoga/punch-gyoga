@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>교가때리기 게임하기</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      background-color: #111;
+      color: white;
+    }
+    img {
+      width: 400px;
+      height: 400px;
+      image-rendering: pixelated;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>교가때리기 게임하기</h1>
+  <p>펀치 횟수: <span id="count">0</span></p>
+  <img id="enemy" src="images/clean.png">
+  <br>
+  <button onclick="punch()">펀치!</button>
+  <br><br>
+  <button onclick="resetGame()">다시 시작</button>
+  <p id="message"></p>
+
+  <audio id="punchsound" src="sounds/punchsound.wav"></audio>
+  <audio id="hitsound1" src="sounds/hitsound1.wav"></audio>
+  <audio id="hitsound2" src="sounds/hitsound2.wav"></audio>
+  <audio id="hitsound3" src="sounds/hitsound3.wav"></audio>
+
+  <script>
+    let count = 0;
+    const enemy = document.getElementById("enemy");
+    const countText = document.getElementById("count");
+    const message = document.getElementById("message");
+
+    const punchSound = document.getElementById("punchsound");
+    const hitSounds = [
+      document.getElementById("hitsound1"),
+      document.getElementById("hitsound2"),
+      document.getElementById("hitsound3"),
+    ];
+
+    function punch() {
+      if (count >= 10) return;
+
+      count++;
+      countText.innerText = count;
+
+      punchSound.currentTime = 0;
+      punchSound.play();
+
+      const randSide = Math.random() < 0.5 ? 'L' : 'R';
+      let state = '';
+
+      if (count >= 10) {
+        state = 'over';
+        enemy.src = 'images/over.png';
+        message.innerText = "🎉 You Win!";
+        setTimeout(() => {
+          enemy.src = 'images/afterover.png';
+        }, 1000);
+        return;
+      } else if (count >= 7) {
+        state = 'veryhurt';
+      } else if (count >= 4) {
+        state = 'hurt';
+      } else {
+        state = 'clean';
+      }
+
+      // 랜덤 맞는 소리
+      const randomHitSound = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+      randomHitSound.currentTime = 0;
+      randomHitSound.play();
+
+      const hitImage = `images/${state}_hit${randSide}.png`;
+      enemy.src = hitImage;
+
+      setTimeout(() => {
+        enemy.src = `images/${state}.png`;
+      }, 200);
+    }
+
+    function resetGame() {
+      count = 0;
+      countText.innerText = count;
+      message.innerText = "";
+      enemy.src = 'images/clean.png';
+    }
+
+    // 키보드로 R 눌러서 리셋
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        resetGame();
+      }
+    });
+  </script>
+
+</body>
+</html>
