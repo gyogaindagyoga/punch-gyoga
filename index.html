@@ -1,25 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
   <title>교가때리기 게임하기</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      text-align: center;
-      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
       background-color: #111;
       color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
     }
+
+    h1 {
+      font-size: 6vw;
+      margin-top: 5vw;
+    }
+
+    p {
+      font-size: 4.5vw;
+    }
+
     img {
-      width: 400px;
-      height: 400px;
+      width: 80vw;
+      max-width: 400px;
+      height: auto;
       image-rendering: pixelated;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      margin-top: 20px;
       cursor: pointer;
+      margin: 4vw 0;
+    }
+
+    button {
+      font-size: 4vw;
+      padding: 2vw 5vw;
+      margin: 3vw;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #555;
+    }
+
+    #clearMessage {
+      display: none;
+      font-size: 4.5vw;
+      margin-top: 4vw;
+      color: #00ffcc;
+    }
+
+    a.youtube-link {
+      display: inline-block;
+      margin-top: 2vw;
+      font-size: 4.5vw;
+      color: #ffcc00;
+      text-decoration: underline;
+    }
+
+    @media (min-width: 600px) {
+      h1 { font-size: 30px; }
+      p, button, .youtube-link, #clearMessage { font-size: 20px; }
     }
   </style>
 </head>
@@ -27,12 +76,16 @@
 
   <h1>교가때리기 게임하기</h1>
   <p>펀치 횟수: <span id="count">0</span></p>
-  <img id="enemy" src="images/clean.png">
-  <br>
-  <button onclick="punch()">펀치!</button>
-  <br><br>
-  <button onclick="resetGame()">다시 시작</button>
+
+  <img id="enemy" src="images/clean.png" alt="때릴 대상" />
+
   <p id="message"></p>
+  <div id="clearMessage">
+    🎉 You Win! 축하합니다!<br>
+    👉 <a class="youtube-link" href="https://youtu.be/88hvuiZewfA" target="_blank">명반 [엽기] 들으러 가기</a>
+  </div>
+
+  <button onclick="resetGame()">다시 시작</button>
 
   <audio id="punchsound" src="sounds/punchsound.wav"></audio>
   <audio id="hitsound1" src="sounds/hitsound1.wav"></audio>
@@ -44,6 +97,7 @@
     const enemy = document.getElementById("enemy");
     const countText = document.getElementById("count");
     const message = document.getElementById("message");
+    const clearMessage = document.getElementById("clearMessage");
 
     const punchSound = document.getElementById("punchsound");
     const hitSounds = [
@@ -67,7 +121,8 @@
       if (count >= 10) {
         state = 'over';
         enemy.src = 'images/over.png';
-        message.innerText = "🎉 You Win!";
+        message.innerText = "";
+        clearMessage.style.display = "block";
         setTimeout(() => {
           enemy.src = 'images/afterover.png';
         }, 1000);
@@ -80,7 +135,6 @@
         state = 'clean';
       }
 
-      // 랜덤 맞는 소리
       const randomHitSound = hitSounds[Math.floor(Math.random() * hitSounds.length)];
       randomHitSound.currentTime = 0;
       randomHitSound.play();
@@ -98,7 +152,11 @@
       countText.innerText = count;
       message.innerText = "";
       enemy.src = 'images/clean.png';
+      clearMessage.style.display = "none";
     }
+
+    // 이미지 클릭으로 펀치
+    enemy.addEventListener("click", punch);
 
     // 키보드로 R 눌러서 리셋
     document.addEventListener('keydown', (e) => {
@@ -106,7 +164,16 @@
         resetGame();
       }
     });
-  </script>
 
+    // 모바일 더블탭 확대 방지
+    let lastTouchTime = 0;
+    document.addEventListener("touchend", function(e) {
+      const now = Date.now();
+      if (now - lastTouchTime <= 300) {
+        e.preventDefault();
+      }
+      lastTouchTime = now;
+    }, { passive: false });
+  </script>
 </body>
 </html>
