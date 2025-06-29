@@ -1,91 +1,45 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <meta charset="UTF-8">
   <title>교가때리기 게임하기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
-      padding: 0;
+      text-align: center;
+      font-family: sans-serif;
       background-color: #111;
       color: white;
-      font-family: 'Arial', sans-serif;
-      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-
-    h1 {
-      font-size: 6vw;
-      margin-top: 5vw;
-    }
-
-    p {
-      font-size: 4.5vw;
-    }
-
     img {
-      width: 80vw;
+      width: 90vw;
       max-width: 400px;
       height: auto;
       image-rendering: pixelated;
-      cursor: pointer;
-      margin: 4vw 0;
     }
-
     button {
-      font-size: 4vw;
-      padding: 2vw 5vw;
-      margin: 3vw;
-      background-color: #333;
-      color: white;
-      border: none;
-      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 18px;
+      margin: 10px;
       cursor: pointer;
     }
-
-    button:hover {
-      background-color: #555;
-    }
-
-    #clearMessage {
-      display: none;
-      font-size: 4.5vw;
-      margin-top: 4vw;
-      color: #00ffcc;
-    }
-
-    a.youtube-link {
-      display: inline-block;
-      margin-top: 2vw;
-      font-size: 4.5vw;
-      color: #ffcc00;
-      text-decoration: underline;
-    }
-
-    @media (min-width: 600px) {
-      h1 { font-size: 30px; }
-      p, button, .youtube-link, #clearMessage { font-size: 20px; }
+    .note {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-
   <h1>교가때리기 게임하기</h1>
   <p>펀치 횟수: <span id="count">0</span></p>
-
-  <img id="enemy" src="images/clean.png" alt="때릴 대상" />
-
-  <p id="message"></p>
-  <div id="clearMessage">
-    🎉 You Win! 축하합니다!<br>
-    👉 <a class="youtube-link" href="https://youtu.be/88hvuiZewfA" target="_blank">명반 [엽기] 들으러 가기</a>
-  </div>
-
+  <img id="enemy" src="images/clean.png">
+  <br>
   <button onclick="resetGame()">다시 시작</button>
+  <p class="note">※ 게임이 원활하지 않을 시 펀치 속도를 줄이거나 다시 시작을 누르세요.</p>
+  <p id="message"></p>
 
   <audio id="punchsound" src="sounds/punchsound.wav"></audio>
   <audio id="hitsound1" src="sounds/hitsound1.wav"></audio>
@@ -94,10 +48,12 @@
 
   <script>
     let count = 0;
+    let startTime = null;
+    let endTime = null;
+
     const enemy = document.getElementById("enemy");
     const countText = document.getElementById("count");
     const message = document.getElementById("message");
-    const clearMessage = document.getElementById("clearMessage");
 
     const punchSound = document.getElementById("punchsound");
     const hitSounds = [
@@ -106,8 +62,13 @@
       document.getElementById("hitsound3"),
     ];
 
+    let records = JSON.parse(localStorage.getItem('punchRecords') || '[]');
+
+    enemy.addEventListener('click', punch);
+
     function punch() {
       if (count >= 10) return;
+      if (count === 0) startTime = performance.now();
 
       count++;
       countText.innerText = count;
@@ -119,10 +80,26 @@
       let state = '';
 
       if (count >= 10) {
+        endTime = performance.now();
+        const elapsed = (endTime - startTime) / 1000;
+
+        records.push({ time: elapsed });
+        records.sort((a, b) => a.time - b.time);
+        localStorage.setItem('punchRecords', JSON.stringify(records));
+
+        const rank = records.findIndex(r => r.time === elapsed) + 1;
+        if ((records.length < 123 && elapsed <= 5) || rank <= 123) {
+          const initials = prompt(`🎉 당신의 기록은 ${elapsed.toFixed(2)}초입니다!\n순위: ${rank}등\n이니셜을 입력하세요 (영문 3자):`);
+          if (initials && /^[A-Z]{1,3}$/i.test(initials)) {
+            records[rank - 1].initials = initials.toUpperCase();
+            localStorage.setItem('punchRecords', JSON.stringify(records));
+          }
+        }
+
         state = 'over';
         enemy.src = 'images/over.png';
-        message.innerText = "";
-        clearMessage.style.display = "block";
+        message.innerHTML = `🎉 You Win!<br><a href="https://youtu.be/88hvuiZewfA" target="_blank" style="color: yellow; text-decoration: underline;">▶ 유튜브 보러가기</a>`;
+
         setTimeout(() => {
           enemy.src = 'images/afterover.png';
         }, 1000);
@@ -149,31 +126,18 @@
 
     function resetGame() {
       count = 0;
+      startTime = null;
+      endTime = null;
       countText.innerText = count;
       message.innerText = "";
       enemy.src = 'images/clean.png';
-      clearMessage.style.display = "none";
     }
 
-    // 이미지 클릭으로 펀치
-    enemy.addEventListener("click", punch);
-
-    // 키보드로 R 눌러서 리셋
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         resetGame();
       }
     });
-
-    // 모바일 더블탭 확대 방지
-    let lastTouchTime = 0;
-    document.addEventListener("touchend", function(e) {
-      const now = Date.now();
-      if (now - lastTouchTime <= 300) {
-        e.preventDefault();
-      }
-      lastTouchTime = now;
-    }, { passive: false });
   </script>
 </body>
 </html>
